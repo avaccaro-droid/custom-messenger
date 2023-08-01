@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Messenger - View</title>
+
+		<script>
+			function groupOrContactClick(event) {
+				//import the messages array
+				let impMessages = <%- JSON.stringify(messages) %>;
+				//import the current user
+				const currentUser = <%- JSON.stringify(address) %>;
+
+				//get all nested li elements in myUL
+				let links = document.getElementById('myUL').getElementsByTagName('li');
+				for (let link of links) {
+					//set each element to black (clear selection colour)
+    				link.style.color = "rgb(91, 91, 91)";
+    				link.style.fontWeight = 'normal';
+				}
+
+				//get all nested span elements in myUL
+				let links2 = document.getElementById('myUL').getElementsByTagName('span');
+				for (let link2 of links2) {
+					//set each element to black (clear selection colour)
+    				link2.style.color = "rgb(91, 91, 91)";
+    				link2.style.fontWeight = 'normal';
+				}
+
+				//this is the selected group or contact
+				const groupOrContact = event.target.innerText;
+				//change the colour of the selected group or contact
+				event.target.style.color = "rgb(48, 109, 178)";
+				event.target.style.fontWeight = 'bold';
+
+				//set the text of the label to indicate what group/contact a message will be sent to
+				const selectedToLabel = document.getElementById("selectedTo");
+				selectedToLabel.innerHTML = "Send to: " + groupOrContact;
+
+				//save for send message functionality
+				const savedSendMessageFunctionality = document.getElementsByName("selectedGroupOrContact")[0];
+				savedSendMessageFunctionality.value = groupOrContact;
+
+				//adjust the page header so the user knows the scope
+				let title = document.getElementById("viewScope");
+				title.innerHTML = "<font size=\"5\">Messenger - view " + groupOrContact + "</font>";
+
+				let filteredMessages = [];
+				for (let x = 0; x < impMessages.length; x++) {
+					const impMessage = impMessages[x];
+
+					if (impMessage.id.endsWith(groupOrContact)
+						|| impMessage.from === groupOrContact && impMessage.id.endsWith(currentUser)) {
+						filteredMessages.push(impMessages[x]);
+					}
+				}
+
+				//import the messageTable
+				let mTable = document.getElementById("messageTable");
+				//delete all previous records
+				while(mTable.rows.length > 0) {
+			  		mTable.deleteRow(0);
+				}
+
+				//recreate the headers
+				//FYI: another option could be to not delete the headers when deleting all rows
+				let header = mTable.createTHead();
+				let headerRow = header.insertRow(0);
+				
+				let headerCol1 = headerRow.insertCell(0);
+				let headerCol2 = headerRow.insertCell(1);
+				let headerCol3 = headerRow.insertCell(2);
+				let headerCol4 = headerRow.insertCell(3);
+				headerCol1.innerHTML = "<b>To</b>";
+				headerCol2.innerHTML = "<b>From</b>";
+				headerCol3.innerHTML = "<b>Message</b>";
+				headerCol4.innerHTML = "<b>Timestamp</b>";
+
+				for (let x = 0; x < filteredMessages.length; x++) {
+					let row = mTable.insertRow(x + 1);
+					//dynamically handle alternate row colours
+					if (x % 2 == 0) {
+						row.style.backgroundColor = "rgb(230, 230, 230)";
+					} else {
+						row.style.backgroundColor = "white";
+					}
+					//set the text colour to black for each row
+					row.style.color = "black";
+					
+					let toColumn = row.insertCell(0);
+					let fromColumn = row.insertCell(1);
+					let messageColumn = row.insertCell(2);
+					let timestampColumn = row.insertCell(3);
+
+					toColumn.innerHTML = "<button type=\"button\" style=\"font-size: 15px;\" onclick=\"displayGroupMessageInfo('" + filteredMessages[x].groupMessageId + "');\">" + getToFromId(filteredMessages[x].id) + "</button>";
+					fromColumn.innerHTML = filteredMessages[x].from;
+					messageColumn.innerHTML = filteredMessages[x].message;
+					timestampColumn.innerHTML = filteredMessages[x].timestamp.substring(0, filteredMessages[x].timestamp.length - 4);
+				}
+			}
+
+			function reload() {
+				location.reload();
+			}
+
+			function getToFromId(id) {
+				const array = id.split("£");
+				return array[1];
+			}
+
+			function displayGroupMessageInfo(obj) {
+				window.open(location.href + '/groupMessageInfo?groupMessageId=' + obj, '_blank', 'location=yes,height=550,width=1100,scrollbars=yes,status=yes');
+			}
+		</script>
+
+		<!-- TODO - uncomment to enable auto refresh -->
+		<!-- <meta http-equiv="refresh" content="60"> -->
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+		
+		<link id="wsite-base-style" rel="stylesheet" type="text/css" href="http://cdn2.editmysite.com/css/sites.css?buildTime=1234" />
+<link rel="stylesheet" type="text/css" href="http://cdn2.editmysite.com/css/old/fancybox.css?1234" />
+<link rel="stylesheet" type="text/css" href="http://cdn2.editmysite.com/css/social-icons.css?buildtime=1234" media="screen,projection" />
+<link rel="stylesheet" type="text/css" href="/css/styles.css" title="wsite-theme-css" />
+<link href='http://fonts.googleapis.com/css?family=Oxygen:400,300,700&subset=latin,latin-ext' rel='stylesheet' type='text/css' />
+<link href='http://fonts.googleapis.com/css?family=Muli:400,300,300italic,400italic&subset=latin,latin-ext' rel='stylesheet' type='text/css' />
+
+<style type='text/css'>
+.wsite-elements.wsite-not-footer:not(.wsite-header-elements) div.paragraph, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) p, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-block .product-title, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-description, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .wsite-form-field label, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .wsite-form-field label, #wsite-content div.paragraph, #wsite-content p, #wsite-content .product-block .product-title, #wsite-content .product-description, #wsite-content .wsite-form-field label, #wsite-content .wsite-form-field label, .blog-sidebar div.paragraph, .blog-sidebar p, .blog-sidebar .wsite-form-field label, .blog-sidebar .wsite-form-field label {font-family:"Arial" !important;}
+#wsite-content div.paragraph, #wsite-content p, #wsite-content .product-block .product-title, #wsite-content .product-description, #wsite-content .wsite-form-field label, #wsite-content .wsite-form-field label, .blog-sidebar div.paragraph, .blog-sidebar p, .blog-sidebar .wsite-form-field label, .blog-sidebar .wsite-form-field label {}
+.wsite-elements.wsite-footer div.paragraph, .wsite-elements.wsite-footer p, .wsite-elements.wsite-footer .product-block .product-title, .wsite-elements.wsite-footer .product-description, .wsite-elements.wsite-footer .wsite-form-field label, .wsite-elements.wsite-footer .wsite-form-field label{font-family:"Arial" !important;}
+.wsite-elements.wsite-not-footer:not(.wsite-header-elements) h2, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-long .product-title, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-large .product-title, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-small .product-title, #wsite-content h2, #wsite-content .product-long .product-title, #wsite-content .product-large .product-title, #wsite-content .product-small .product-title, .blog-sidebar h2 {font-family:"Arial" !important;}
+#wsite-content h2, #wsite-content .product-long .product-title, #wsite-content .product-large .product-title, #wsite-content .product-small .product-title, .blog-sidebar h2 {}
+.wsite-elements.wsite-footer h2, .wsite-elements.wsite-footer .product-long .product-title, .wsite-elements.wsite-footer .product-large .product-title, .wsite-elements.wsite-footer .product-small .product-title{font-family:"Arial" !important;}
+#wsite-title {font-family:"Arial" !important;}
+.wsite-menu-default a {font-family:"Arial" !important;}
+.wsite-menu a {}
+.wsite-image div, .wsite-caption {font-family:"Arial" !important;}
+.galleryCaptionInnerText {font-family:"Arial" !important;}
+.fancybox-title {}
+.wslide-caption-text {font-family:"Arial" !important;}
+.wsite-phone {font-family:"Arial" !important;}
+.wsite-headline,.wsite-header-section .wsite-content-title {font-family:"Arial" !important;}
+.wsite-headline-paragraph,.wsite-header-section .paragraph {font-family:"Arial" !important;}
+.wsite-button-inner {font-family:"Arial" !important;}
+.wsite-not-footer blockquote {font-family:"Arial" !important;}
+.wsite-footer blockquote {font-family:"Arial" !important;}
+.blog-header h2 a {}
+#wsite-content h2.wsite-product-title {font-family:"Arial" !important;}
+.wsite-product .wsite-product-price a {}
+@media screen and (min-width: 767px) {.wsite-elements.wsite-not-footer:not(.wsite-header-elements) div.paragraph, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) p, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-block .product-title, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-description, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .wsite-form-field label, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .wsite-form-field label, #wsite-content div.paragraph, #wsite-content p, #wsite-content .product-block .product-title, #wsite-content .product-description, #wsite-content .wsite-form-field label, #wsite-content .wsite-form-field label, .blog-sidebar div.paragraph, .blog-sidebar p, .blog-sidebar .wsite-form-field label, .blog-sidebar .wsite-form-field label {font-size:13px !important;}
+#wsite-content div.paragraph, #wsite-content p, #wsite-content .product-block .product-title, #wsite-content .product-description, #wsite-content .wsite-form-field label, #wsite-content .wsite-form-field label, .blog-sidebar div.paragraph, .blog-sidebar p, .blog-sidebar .wsite-form-field label, .blog-sidebar .wsite-form-field label {}
+.wsite-elements.wsite-footer div.paragraph, .wsite-elements.wsite-footer p, .wsite-elements.wsite-footer .product-block .product-title, .wsite-elements.wsite-footer .product-description, .wsite-elements.wsite-footer .wsite-form-field label, .wsite-elements.wsite-footer .wsite-form-field label{}
+.wsite-elements.wsite-not-footer:not(.wsite-header-elements) h2, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-long .product-title, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-large .product-title, .wsite-elements.wsite-not-footer:not(.wsite-header-elements) .product-small .product-title, #wsite-content h2, #wsite-content .product-long .product-title, #wsite-content .product-large .product-title, #wsite-content .product-small .product-title, .blog-sidebar h2 {font-size:12px !important;}
+#wsite-content h2, #wsite-content .product-long .product-title, #wsite-content .product-large .product-title, #wsite-content .product-small .product-title, .blog-sidebar h2 {}
+.wsite-elements.wsite-footer h2, .wsite-elements.wsite-footer .product-long .product-title, .wsite-elements.wsite-footer .product-large .product-title, .wsite-elements.wsite-footer .product-small .product-title{}
+#wsite-title {}
+.wsite-menu-default a {}
+.wsite-menu a {}
+.wsite-image div, .wsite-caption {}
+.galleryCaptionInnerText {}
+.fancybox-title {}
+.wslide-caption-text {}
+.wsite-phone {}
+.wsite-headline,.wsite-header-section .wsite-content-title {}
+.wsite-headline-paragraph,.wsite-header-section .paragraph {font-size:20px !important;}
+.wsite-button-inner {}
+.wsite-not-footer blockquote {}
+.wsite-footer blockquote {}
+.blog-header h2 a {}
+#wsite-content h2.wsite-product-title {}
+.wsite-product .wsite-product-price a {}
+}</style>
+
+<script>
+var STATIC_BASE = '//cdn1.editmysite.com/';
+var ASSETS_BASE = '//cdn2.editmysite.com/';
+var STYLE_PREFIX = 'wsite';
+</script>
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js'></script>
+
+<script type="text/javascript" src="http://cdn2.editmysite.com/js/lang/en/stl.js?buildTime=1234&"></script>
+<script src="http://cdn2.editmysite.com/js/site/main.js?buildTime=1234"></script><script type="text/javascript">
+		function initCustomerAccountsModels() {
+					(function(){_W.setup_rpc({"url":"\/ajax\/api\/JsonRPC\/CustomerAccounts\/","actions":{"CustomerAccounts":[{"name":"login","len":2,"multiple":false,"standalone":false},{"name":"logout","len":0,"multiple":false,"standalone":false},{"name":"getSessionDetails","len":0,"multiple":false,"standalone":false},{"name":"getAccountDetails","len":0,"multiple":false,"standalone":false},{"name":"getOrders","len":0,"multiple":false,"standalone":false},{"name":"register","len":4,"multiple":false,"standalone":false},{"name":"emailExists","len":1,"multiple":false,"standalone":false},{"name":"passwordReset","len":1,"multiple":false,"standalone":false},{"name":"passwordUpdate","len":3,"multiple":false,"standalone":false},{"name":"validateSession","len":1,"multiple":false,"standalone":false}]},"namespace":"_W.CustomerAccounts.RPC"});
+_W.setup_model_rpc({"rpc_namespace":"_W.CustomerAccounts.RPC","model_namespace":"_W.CustomerAccounts.BackboneModelData","collection_namespace":"_W.CustomerAccounts.BackboneCollectionData","bootstrap_namespace":"_W.CustomerAccounts.BackboneBootstrap","models":{"CustomerAccounts":{"_class":"CustomerAccounts.Model.CustomerAccounts","defaults":null,"validation":null,"types":null,"idAttribute":null,"keydefs":null}},"collections":{"CustomerAccounts":{"_class":"CustomerAccounts.Collection.CustomerAccounts"}},"bootstrap":[]});
+})();
+		}
+		if(document.createEvent && document.addEventListener) {
+			var initEvt = document.createEvent('Event');
+			initEvt.initEvent('customerAccountsModelsInitialized', true, false);
+			document.dispatchEvent(initEvt);
+		} else if(document.documentElement.initCustomerAccountsModels === 0){
+			document.documentElement.initCustomerAccountsModels++
+		}
+		</script>
+		<script type="text/javascript"> _W = _W || {}; _W.securePrefix='UNSET'; </script><script>_W = _W || {};
+			_W.customerLocale = "en_US";
+			_W.storeName = null;
+			_W.storeCountry = "GB";
+			_W.storeCurrency = "GBP";
+			_W.storeEuPrivacyPolicyUrl = "";
+			com_currentSite = "602214454497062360";
+			com_userID = "103644702";</script><script type="text/javascript">_W.configDomain = "www.weebly.com";</script><script>_W.relinquish && _W.relinquish()</script>
+<script type="text/javascript" src="http://cdn2.editmysite.com/js/lang/en/stl.js?buildTime=1234&"></script><script> _W.themePlugins = [];</script><script type="text/javascript"> _W.recaptchaUrl = "https://www.google.com/recaptcha/api.js"; </script><script type="text/javascript"><!--
+	var IS_ARCHIVE = 1;
+	
+	function initFlyouts(){
+		initPublishedFlyoutMenus(
+			[{"id":"556852976618333789","title":"Home","url":"index.html","target":"","nav_menu":false,"nonclickable":false},{"id":"279393328996398805","title":"Suppliers","url":"suppliers.html","target":"","nav_menu":false,"nonclickable":true},{"id":"677441136774221827","title":"Exporters","url":"exporters.html","target":"","nav_menu":false,"nonclickable":true},{"id":"714135202878956093","title":"Admin","url":"admin.html","target":"","nav_menu":false,"nonclickable":true},{"id":"556806345710634529","title":"H&M Group Admin","url":"hm-group-admin.html","target":"","nav_menu":false,"nonclickable":true}],
+			"457456728160359826",
+			'',
+			'active',
+			false,
+			{"navigation\/item":"<li {{#id}}id=\"{{id}}\"{{\/id}} class=\"wsite-menu-item-wrap\">\n\t<a\n\t\t{{^nonclickable}}\n\t\t\t{{^nav_menu}}\n\t\t\t\thref=\"{{url}}\"\n\t\t\t{{\/nav_menu}}\n\t\t{{\/nonclickable}}\n\t\t{{#target}}\n\t\t\ttarget=\"{{target}}\"\n\t\t{{\/target}}\n\t\t{{#membership_required}}\n\t\t\tdata-membership-required=\"{{.}}\"\n\t\t{{\/membership_required}}\n\t\tclass=\"wsite-menu-item\"\n\t\t>\n\t\t{{{title_html}}}\n\t<\/a>\n\t{{#has_children}}{{> navigation\/flyout\/list}}{{\/has_children}}\n<\/li>\n","navigation\/flyout\/list":"<div class=\"wsite-menu-wrap\" style=\"display:none\">\n\t<ul class=\"wsite-menu\">\n\t\t{{#children}}{{> navigation\/flyout\/item}}{{\/children}}\n\t<\/ul>\n<\/div>\n","navigation\/flyout\/item":"<li {{#id}}id=\"{{id}}\"{{\/id}}\n\tclass=\"wsite-menu-subitem-wrap {{#is_current}}wsite-nav-current{{\/is_current}}\"\n\t>\n\t<a\n\t\t{{^nonclickable}}\n\t\t\t{{^nav_menu}}\n\t\t\t\thref=\"{{url}}\"\n\t\t\t{{\/nav_menu}}\n\t\t{{\/nonclickable}}\n\t\t{{#target}}\n\t\t\ttarget=\"{{target}}\"\n\t\t{{\/target}}\n\t\tclass=\"wsite-menu-subitem\"\n\t\t>\n\t\t<span class=\"wsite-menu-title\">\n\t\t\t{{{title_html}}}\n\t\t<\/span>{{#has_children}}<span class=\"wsite-menu-arrow\">&gt;<\/span>{{\/has_children}}\n\t<\/a>\n\t{{#has_children}}{{> navigation\/flyout\/list}}{{\/has_children}}\n<\/li>\n"},
+			{"hasCustomMinicart":true}
+		)
+	}
+//-->
+</script>
+		
+		
+	</head>
+	<body class="no-header  wsite-theme-light  wsite-page-initiate-purchase-order header-title-off phone-number-off location-off time-open-off top-header-sticky-off sticky-nav-on custom-option-on menu-style-1 dropdown-menu-1 sticky-button-on ToTop-on section-6-off section-7-off section-26-off section-27-off section-36-off section-37-off slide-4-off slide-5-off slide-24-off slide-25-off "><div id="wrapper">
+		<div id="wrapper_header">
+			<div class="search clearfix">
+				<div class="main clearfix">
+					<span class="wsite-search">
+	<form id="wsite-header-search-form" action="/apps/search" method="get">
+		<input type="text" name="q" class="wsite-search-input" autocomplete="off" placeholder="Search"/><span class="wsite-search-button"><span class="wsite-search-button-inner"></span></span>
+	</form>
+</span>
+					<div class="big-search-close"></div>
+				</div>
+			</div>
+			<div id="header">
+					<div class="header-title"></div>
+					<div class="header-info">
+						<div class="phone-number"></div>
+						<div class="location"></div>
+						<div class="time-open"></div>
+					</div>
+				<div class="header-right">
+					<div class="socials"></div>
+					<div id="minicart"></div>
+					<div class="navigation-button">
+						<span class="nav-button">
+							
+						</span>
+					</div>
+				</div>
+			</div>
+			<div id="navigation">
+				<div class="logo"><span class="wsite-logo">
+
+	<a href="">
+		<img src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Flogos-download.com%2Fwp-content%2Fuploads%2F2016%2F05%2FSainsburys_logo_logotype.png&f=1&nofb=1&ipt=968bc2ee90b1f8baed5fd693e330deaa5fdd00fe9fc9a2ec0c6d94f9a526644a&ipo=images" alt="Sainsbury's" />
+	</a>
+
+</span></div>
+				<div class="nav_right">
+					<div class="menu-hidden"> <ul class="wsite-menu-default">
+		<li id="pg556852976618333789" class="wsite-menu-item-wrap">
+			<a
+						href="index.html"
+				class="wsite-menu-item"
+				>
+				Home
+			</a>
+			
+		</li>
+		<li id="active" class="wsite-menu-item-wrap">
+			<a
+				class="wsite-menu-item"
+				>
+				Messenger
+			</a>
+			<div class="wsite-menu-wrap" style="display:none">
+	<ul class="wsite-menu">
+		<li id="wsite-nav-457456728160359826"
+	class="wsite-menu-subitem-wrap wsite-nav-current"
+	>
+	<a
+				href="initiate-purchase-order.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Initiate purchase order
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-697347909889200888"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="view-order-status.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			View order status
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-902228338910718164"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="view-scans.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			View scans
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-338131205630343041"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="view-closed-orders.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			View closed orders
+		</span>
+	</a>
+	
+</li>
+
+	</ul>
+</div>
+
+		</li>
+		<li id="pg677441136774221827" class="wsite-menu-item-wrap">
+			<a
+				class="wsite-menu-item"
+				>
+				Groups
+			</a>
+			<div class="wsite-menu-wrap" style="display:none">
+	<ul class="wsite-menu">
+		<li id="wsite-nav-877232401757458411"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="add-group.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Add group
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-813215135418455529"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="edit-group.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Edit group
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-853324024384116112"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="delete-group.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Delete group
+		</span>
+	</a>
+	
+</li>
+
+	</ul>
+</div>
+
+		</li>
+		<li id="pg714135202878956093" class="wsite-menu-item-wrap">
+			<a
+				class="wsite-menu-item"
+				>
+				Colleagues
+			</a>
+			<div class="wsite-menu-wrap" style="display:none">
+	<ul class="wsite-menu">
+		<li id="wsite-nav-470537944953423301"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="add-colleague.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Add colleague
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-115517643789920944"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="edit-colleague.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Edit colleague
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-126761212243650293"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="delete-colleague.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Delete colleague
+		</span>
+	</a>
+	
+</li>
+
+	</ul>
+</div>
+
+		</li>
+</ul>
+ </div>
+					<div class="menu mobile-nav">
+						<ul class="wsite-menu-default">
+								<li id="pg556852976618333789" class="wsite-menu-item-wrap">
+									<a
+												href="index.html"
+										class="wsite-menu-item"
+										>
+										Home
+									</a>
+									
+								</li>
+								<li id="active" class="wsite-menu-item-wrap">
+									<a
+										class="wsite-menu-item"
+										>
+										Messenger
+									</a>
+									<div class="wsite-menu-wrap" style="display:none">
+	<ul class="wsite-menu">
+		<li id="wsite-nav-457456728160359826"
+	class="wsite-menu-subitem-wrap wsite-nav-current"
+	>
+	<a
+				href="view.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			View
+		</span>
+	</a>
+	
+</li>
+
+	</ul>
+</div>
+
+								</li>
+								<li id="pg677441136774221827" class="wsite-menu-item-wrap">
+									<a
+										class="wsite-menu-item"
+										>
+										Groups
+									</a>
+									<div class="wsite-menu-wrap" style="display:none">
+	<ul class="wsite-menu">
+		<li id="wsite-nav-877232401757458411"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="add-group.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Add group
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-813215135418455529"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="edit-group.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Edit group
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-853324024384116112"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="delete-group.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Delete group
+		</span>
+	</a>
+	
+</li>
+
+	</ul>
+</div>
+
+								</li>
+								<li id="pg714135202878956093" class="wsite-menu-item-wrap">
+									<a
+										class="wsite-menu-item"
+										>
+										Colleagues
+									</a>
+									<div class="wsite-menu-wrap" style="display:none">
+	<ul class="wsite-menu">
+		<li id="wsite-nav-470537944953423301"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="add-colleague.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Add colleague
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-115517643789920944"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="edit-colleague.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Edit colleague
+		</span>
+	</a>
+	
+</li>
+<li id="wsite-nav-126761212243650293"
+	class="wsite-menu-subitem-wrap "
+	>
+	<a
+				href="delete-colleague.html"
+		class="wsite-menu-subitem"
+		>
+		<span class="wsite-menu-title">
+			Delete colleague
+		</span>
+	</a>
+	
+</li>
+
+	</ul>
+</div>
+
+								</li>
+						</ul>
+					</div>
+					
+					<div class="menu-toggle"></div>
+					<div class="menu-close"></div>
+				</div>
+			</div>
+		</div>
+		<div id="main-container" class="clearfix">
+			<div id="wsite-content" class="wsite-elements wsite-not-footer">
+	<div class="wsite-section-wrap">
+	<div class="wsite-section wsite-body-section wsite-section-bg-color wsite-background-10" style="height: 423px;background-color: #ffffff;background-image: none;is_customized: 1;" >
+		<div class="wsite-section-content">
+				<div class="main">
+					
+			<div class="wsite-section-elements">
+				<div><div id="570523114449496629" align="inherit" style="width: 100%; overflow-y: hidden;" class="wcustomhtml"><script>
+  var v_dpTotalCount = 2;
+  var v_dpCounter = 0;
+</script>
+</div>
+
+
+
+</div>
+
+<div class="paragraph" style="text-align:right;">
+	<p><b>Username: <%= address %></b></p>
+	<p><b>Role: <%= role %></b></p>
+	<p><b>Business unit: <%= warehouseId %></b></p>
+	<form action="/logout.html" method="POST"><button type="submit">Logout</button></form>
+</div>
+
+<div id="viewScope" class="paragraph"><font size="5">Messenger - view all</font></div>
+
+<ul id="myUL">
+	<li><span class="caret">Users</span>
+		<ul class="nested">
+			<li><span class="caret">Colleagues</span>
+		    	<ul class="nested">
+		    		<% groupContactMapForColleagues.forEach((value, key, map) => { %>
+		    			<% if (value.length > 0) { %>
+		    				<li onclick="groupOrContactClick(event);"><span class="caret"><%= key %></span>
+		    					<ul class="nested">
+		    					<% value.forEach(function(contact) { %>
+		    						<li><%= contact.address %></li>
+		    					<% }) %>
+		    					</ul>
+							</li>
+		    			<% } else { %>
+		    				<li onclick="groupOrContactClick(event);"><%= key %></li>
+		    			<% } %>
+		    		<% }) %>
+		    	</ul>
+		  	</li>
+	  	  	<li><span class="caret">Supervisors</span>
+	  	    	<ul class="nested">
+	  	    		<% groupContactMapForSupervisors.forEach((value, key, map) => { %>
+	  	    			<% if (value.length > 0) { %>
+	  	    				<li onclick="groupOrContactClick(event);"><span class="caret"><%= key %></span>
+	  	    					<ul class="nested">
+	  	    					<% value.forEach(function(contact) { %>
+	  	    						<li><%= contact.address %></li>
+	  	    					<% }) %>
+	  	    					</ul>
+	  						</li>
+	  	    			<% } else { %>
+	  	    				<li onclick="groupOrContactClick(event);"><%= key %></li>
+	  	    			<% } %>
+	  	    		<% }) %>
+	  	    	</ul>
+	  	  	</li>
+		</ul>
+	</li>
+</ul>
+
+<div class="wsite-spacer" style="height:25px;"></div>
+
+<button type="button" style="font-size: 15px;" onclick="reload();">Refresh</button>
+
+<table id="messageTable" style="width:100%">
+  	<tr>
+  		<th>To</th>
+    	<th>From</th>
+    	<th>Message</th>
+    	<th>Timestamp</th>
+  	</tr>
+  	<% messages.forEach(function(message) { %>
+  	<tr class="lunaRows">
+  		<td>
+  			<% const array = message.id.split("£"); %>
+  			<button type="button" style="font-size: 15px;" onclick="displayGroupMessageInfo('<%= message.groupMessageId %>');"><%= array[1] %></button>
+		</td>
+  		<td><%= message.from %></td>
+  		<td><%= message.message %></td>
+  		<td>
+  			<% const formatted = message.timestamp.substring(0, message.timestamp.length - 4); %>
+  			<%= formatted %>
+  		</td>
+  	</tr>
+  	<% }) %>
+</table>
+
+<div class="wsite-spacer" style="height:25px;"></div>
+
+<table>
+	<tr>
+		<td>
+			<input type="image" src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn4.iconfinder.com%2Fdata%2Ficons%2Foutline-2%2F64%2Fpaper-plane-512.png&f=1&nofb=1&ipt=84c3e6740a89ee5ae97b130d4b3c01050f6c80881e4d4e3adcac3d29e0cf07af&ipo=images" width="30" height="30" />
+		</td>
+		<td><label id="selectedTo">Send to: N/A</label></td>
+	</tr>
+</table>
+
+
+<form action="/view.html" method="POST">
+	<input type="text" name="messageToSend" style="width:1000px;"></input>
+	<button type="submit" style="font-size: 18px;">Send</button>
+	<input type="text" name="selectedGroupOrContact" style="visibility: hidden;"></label>
+</form>
+
+<!-- script for toggling tree view options -->
+<script>
+var toggler = document.getElementsByClassName("caret");
+var i;
+
+for (i = 0; i < toggler.length; i++) {
+  toggler[i].addEventListener("click", function() {
+    this.parentElement.querySelector(".nested").classList.toggle("active");
+    this.classList.toggle("caret-down");
+  });
+}
+</script>
+
+
+<div><div id="112798989791832842" align="left" style="width: 100%; overflow-y: hidden;" class="wcustomhtml"><script type="text/javascript">
+document.addEventListener('DataPageReady', function (v_e) 
+  {try{document.getElementsByName('cb-auth-box')[v_dpCounter].style.display = "none";}catch(v_e){}
+    v_dpCounter +=1;
+	  if( v_dpTotalCount <= v_dpCounter) 
+     {if(document.getElementsByName("cb-auth-box")) 
+        {var v_box = document.getElementsByName("cb-auth-box").length-1 ;
+	       for (i=0; i < v_box; i++) { document.getElementsByName("cb-auth-box")[i].style.display = "none" ; }
+		try{document.getElementsByName("cb-auth-box")[v_box].style.display = "" ;}catch(v_e){}
+	       }
+	    }
+	 });
+</script></div>
+
+
+
+</div>
+			</div>
+		
+				</div>
+			</div>
+
+	</div>
+</div>
+<div class="wsite-section-wrap">
+	<div class="wsite-section wsite-body-section wsite-background-65" style="height: auto;" >
+		<div class="wsite-section-content">
+				<div class="main">
+					
+			<div class="wsite-section-elements">
+				
+			</div>
+		
+				</div>
+			</div>
+
+	</div>
+</div>
+
+</div>
+
+		</div>
+	
+		<div id="footer-wrap">
+			<div class="footer_bottom">
+				<div class="main">
+					<div class='wsite-elements wsite-footer'>
+<div class="paragraph" style="text-align:left;"><font size="1">Copyright &copy; 2023<br />&#8203;1.0.0<br />Powered by software developed by Mobilis Consulting Ltd.</font><br /></div></div>
+				</div>
+			</div>
+		</div>
+	</div> 
+
+	<!-- JavaScript -->
+    <div id="customer-accounts-app"></div>
+    <script src="http://cdn2.editmysite.com/js/site/main-customer-accounts-site.js?buildTime=1234"></script>
+
+		
+	</body>
+</html>
