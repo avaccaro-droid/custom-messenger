@@ -85,13 +85,14 @@
 					}
 					//set the text colour to black for each row
 					row.style.color = "black";
+					row.style.fontSize = "14px";
 					
 					let toColumn = row.insertCell(0);
 					let fromColumn = row.insertCell(1);
 					let messageColumn = row.insertCell(2);
 					let timestampColumn = row.insertCell(3);
 
-					toColumn.innerHTML = "<button type=\"button\" style=\"font-size: 15px;\" onclick=\"displayGroupMessageInfo('" + filteredMessages[x].groupMessageId + "');\">" + getToFromId(filteredMessages[x].id) + "</button>";
+					toColumn.innerHTML = "<button type=\"button\" onclick=\"displayGroupMessageInfo('" + filteredMessages[x].groupMessageId + "');\">" + getToFromId(filteredMessages[x].id) + "</button>";
 					fromColumn.innerHTML = filteredMessages[x].from;
 					messageColumn.innerHTML = filteredMessages[x].message;
 					timestampColumn.innerHTML = filteredMessages[x].timestamp.substring(0, filteredMessages[x].timestamp.length - 4);
@@ -660,7 +661,7 @@ _W.setup_model_rpc({"rpc_namespace":"_W.CustomerAccounts.RPC","model_namespace":
 
 <div class="wsite-spacer" style="height:25px;"></div>
 
-<button type="button" style="font-size: 15px;" onclick="reload();">Refresh</button>
+<button type="button" onclick="reload();">Refresh</button>
 
 <table id="messageTable" style="width:100%">
   	<tr>
@@ -670,10 +671,11 @@ _W.setup_model_rpc({"rpc_namespace":"_W.CustomerAccounts.RPC","model_namespace":
     	<th>Timestamp</th>
   	</tr>
   	<% messages.forEach(function(message) { %>
+  	<% if (message.isGroupMessage === true && message.isIndividualMessage === false || message.isGroupMessage === false && message.isIndividualMessage === true) { %>
   	<tr class="lunaRows">
   		<td>
   			<% const array = message.id.split("£"); %>
-  			<button type="button" style="font-size: 15px;" onclick="displayGroupMessageInfo('<%= message.groupMessageId %>');"><%= array[1] %></button>
+  			<button type="button" onclick="displayGroupMessageInfo('<%= message.groupMessageId %>');"><%= array[1] %></button>
 		</td>
   		<td><%= message.from %></td>
   		<td><%= message.message %></td>
@@ -682,6 +684,7 @@ _W.setup_model_rpc({"rpc_namespace":"_W.CustomerAccounts.RPC","model_namespace":
   			<%= formatted %>
   		</td>
   	</tr>
+  	<% } %>
   	<% }) %>
 </table>
 
@@ -699,8 +702,8 @@ _W.setup_model_rpc({"rpc_namespace":"_W.CustomerAccounts.RPC","model_namespace":
 
 <form action="/view.html" method="POST">
 	<input type="text" name="messageToSend" style="width:1000px;"></input>
-	<button type="submit" style="font-size: 18px;">Send</button>
-	<input type="text" name="selectedGroupOrContact" style="visibility: hidden;"></label>
+	<button type="submit">Send</button>
+	<input type="text" name="selectedGroupOrContact" style="visibility: hidden;">
 </form>
 
 <!-- script for toggling tree view options -->

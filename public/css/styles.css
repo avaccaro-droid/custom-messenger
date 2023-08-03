@@ -257,7 +257,7 @@
  :-moz-placeholder { color: #333; opacity: 1 !important; }
  ::-moz-placeholder { color: #333; opacity: 1 !important; }
  :-ms-input-placeholder { color: #333; }
- label { color: #333; font-weight: normal !important; font-size: inherit !important; font-weight: 400; }
+ label { color: #333; font-weight: normal !important; font-size: 14px; font-weight: 400; }
  label.wsite-form-sublabel { font-size: 12px !important; color: #999; }
  blockquote { background: #ebebeb; color: #111; font-size: 18px; padding: 22px 24px 30px 24px !important; max-width: inherit !important; position: relative; margin-bottom: 20px; -o-border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px; border-radius: 5px; }
  blockquote:after { content: "\e920"; right: 24px; bottom: 5px; position: absolute; height: 33px; width: 40px; color: #fff; font-size: 30px; }
@@ -1051,6 +1051,7 @@ div.paragraph ol, div.paragraph ol li { list-style: decimal outside !important; 
   list-style-type: none;
   margin: 0;
   padding: 0;
+  font-size: 14px;
 }
 
 .caret {
@@ -1081,9 +1082,11 @@ div.paragraph ol, div.paragraph ol li { list-style: decimal outside !important; 
 .lunaRows:nth-child(odd) {
     background: white;
     color: black;
+    font-size: 14px;
 }
 
 .lunaRows:nth-child(even) {
     background: rgb(230, 230, 230);
     color: black;
+    font-size: 14px;
 }

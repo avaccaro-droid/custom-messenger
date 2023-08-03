@@ -120,9 +120,9 @@ function isGroup(name, callback) {
 	let emptyArray = [];
 	scanGroups(groupParams, emptyArray, function(error, groups) {
 		if (groups.length > 0) {
-			callback(true);
+			return callback(true);
 		} else {
-			callback(false);
+			return callback(false);
 		}
 	});
 }
@@ -319,6 +319,7 @@ function insertMessage(item, callback) {
 	        from: item.from,
 	        isGroupMessage: item.isGroupMessage,
 	        groupMessageId: item.groupMessageId,
+	        isIndividualMessage: item.isIndividualMessage,
 	    },
 	};
 
@@ -379,6 +380,7 @@ function insertMessages(item, contacts, callback) {
 		        from: item.from,
 		        isGroupMessage: false,
 		        groupMessageId: item.groupMessageId,
+		        isIndividualMessage: false,
 		    },
 		};
 
@@ -1064,6 +1066,7 @@ app.post("/view.html", function(req, res) {
 				from: req.user.address,
 				isGroupMessage: isGroup,
 				groupMessageId: uuid.v4(),
+				isIndividualMessage: !isGroup,
 			};
 
 			insertMessage(item, function(error) {
