@@ -240,52 +240,63 @@ function scanMessageReceipts(params, messageReceipts, callback) {
 }
 
 //sorting/filtering methods
-function sortGroupsAndContactsForColleagues(groups, contacts, currentUser) {
+function sortGroupsAndContacts(groups, contacts, currentUser) {
 	const map = new Map();
 
 	for (let x = 0; x < groups.length; x++) {
-		const group = groups[x];
-		map.set(group.name, filterColleagueContacts(contacts, group.name, currentUser));
+		map.set({
+			partialId: groups[x].name,
+			firstName: '',
+			lastName: '',
+			isGroup: true,
+		}, filterContacts(contacts, groups[x].name, currentUser));
 	}
 
 	return map;
 }
 
-function sortGroupsAndContactsForSupervisors(groups, contacts, currentUser) {
-	const map = new Map();
-
-	for (let x = 0; x < groups.length; x++) {
-		const group = groups[x];
-		map.set(group.name, filterSupervisorContacts(contacts, group.name, currentUser));
-	}
-
-	return map;
-}
-
-function filterColleagueContacts(contacts, name, currentUser) {
+function filterContacts(contacts, name, currentUser) {
 	let filteredContacts = [];
 
 	for (let x = 0; x < contacts.length; x++) {
-		const contact = contacts[x];
-		if (contact.group === name && contact.role === 'Standard' && contact.address !== currentUser) {
-			filteredContacts.push(contact);
+		if (contacts[x].group === name && contacts[x].address !== currentUser) {
+			filteredContacts.push({
+				partialId: contacts[x].address,
+				firstName: contacts[x].firstName,
+				lastName: contacts[x].lastName,
+				isGroup: false,
+				groupName: contacts[x].group,
+			});
 		}
 	}
 
 	return filteredContacts;
 }
 
-function filterSupervisorContacts(contacts, name, currentUser) {
-	let filteredContacts = [];
+function filterGroupContact(groups, contacts, selected) {
+	let selectedGroupContact = {
+		partialId: selected,
+	};
 
-	for (let x = 0; x < contacts.length; x++) {
-		const contact = contacts[x];
-		if (contact.group === name && contact.role === 'Admin' && contact.address !== currentUser) {
-			filteredContacts.push(contact);
+	for (let x = 0; x < groups.length; x++) {
+		if (groups[x].name === selected) {
+			selectedGroupContact["isGroup"] = true;
+			selectedGroupContact["groupName"] = groups[x].name;
+			return selectedGroupContact;
 		}
 	}
 
-	return filteredContacts;
+	for (let y = 0; y < contacts.length; y++) {
+		if (contacts[y].address === selected) {
+			selectedGroupContact["firstName"] = contacts[y].firstName;
+			selectedGroupContact["lastName"] = contacts[y].lastName;
+			selectedGroupContact["isGroup"] = false;
+			selectedGroupContact["groupName"] = contacts[y].group;
+			return selectedGroupContact;
+		}
+	}
+
+	return selectedGroupContact;
 }
 
 function sortMessages(messages) {
@@ -294,11 +305,11 @@ function sortMessages(messages) {
 		const comp2 = b.timestamp;
 
 		if (comp1 < comp2) {
-			return -1;
+			return 1;
 		}
 
 		if (comp1 > comp2) {
-			return 1;
+			return -1;
 		}
 
 		return 0;
@@ -320,6 +331,8 @@ function insertMessage(item, callback) {
 	        isGroupMessage: item.isGroupMessage,
 	        groupMessageId: item.groupMessageId,
 	        isIndividualMessage: item.isIndividualMessage,
+	        firstName: item.firstName,
+	        lastName: item.lastName,
 	    },
 	};
 
@@ -381,6 +394,8 @@ function insertMessages(item, contacts, callback) {
 		        isGroupMessage: false,
 		        groupMessageId: item.groupMessageId,
 		        isIndividualMessage: false,
+		        firstName: item.firstName,
+		        lastName: item.lastName,
 		    },
 		};
 
@@ -452,6 +467,8 @@ function insertColleague(item, callback) {
 	        group: item.group,
 	        password: item.password,
 	        role: item.role,
+	        firstName: item.firstName,
+	        lastName: item.lastName,
 	    },
 	};
 
@@ -628,15 +645,31 @@ function loadViewPage(req, res) {
 		            //TODO - error scenario
 		        } else {
 		            //contacts OK, now get messages
+		            //default view all params
+		        	let filterExpression = 'begins_with(#id, :warehouseId)';
+		        	let expressionAttributeNames = {
+	            	    "#id": "id",
+	            	};
+		        	let expressionAttributeValues = {
+	            	    ":warehouseId": req.user.warehouseId,
+	            	};
+
+	            	//do we have a query string param?
+	            	if (objValid(req.query.selected)) {
+	            		filterExpression += ' AND #id = :id OR #id2 = :id2 AND #from = :from';
+						expressionAttributeNames['#id'] = "id";
+						expressionAttributeNames['#id2'] = "id";
+						expressionAttributeNames['#from'] = "from";
+						expressionAttributeValues[':id'] = req.user.warehouseId + "£" + req.query.selected;
+						expressionAttributeValues[':id2'] = req.user.warehouseId + "£" + req.user.address;
+						expressionAttributeValues[':from'] = req.query.selected;
+	            	}
+
 		            let messageParams = {
 		            	TableName: process.env.MESSAGE_TABLE_NAME,
-		            	FilterExpression: 'begins_with(#id, :warehouseId)',
-		            	ExpressionAttributeNames: {
-		            	    "#id": "id",
-		            	},
-		            	ExpressionAttributeValues: {
-		            	    ":warehouseId": req.user.warehouseId,
-		            	},
+		            	FilterExpression: filterExpression,
+		            	ExpressionAttributeNames: expressionAttributeNames,
+		            	ExpressionAttributeValues: expressionAttributeValues,
 		            };
 
 		            let emptyMessagesArray = [];
@@ -664,12 +697,10 @@ function loadViewPage(req, res) {
 		            		//pass the array to the update method to mark all as read
 		            		setMessageReceipt(messageReceipts, function() {
         						res.render("view", {
-        			            	address: req.user.address,
-        			            	role: req.user.role,
-        			            	warehouseId: req.user.warehouseId,
+        			            	user: req.user,
         			            	messages: sortMessages(messages),
-        			            	groupContactMapForColleagues: sortGroupsAndContactsForColleagues(groups, contacts, req.user.address),
-        			            	groupContactMapForSupervisors: sortGroupsAndContactsForSupervisors(groups, contacts, req.user.address),
+        			            	groupsContacts: sortGroupsAndContacts(groups, contacts, req.user.address),
+        			            	selectedGroupContact: filterGroupContact(groups, contacts, req.query.selected),
         			            });
 		            		});
 		            	});
@@ -683,12 +714,14 @@ function loadViewPage(req, res) {
 function loadDeleteColleaguePage(req, res) {
 	let groupParams = {
 		TableName: process.env.GROUP_TABLE_NAME,
-		FilterExpression: '#warehouseId = :warehouseId',
+		FilterExpression: '#warehouseId = :warehouseId AND #name <> :name',
 		ExpressionAttributeNames: {
 		    "#warehouseId": "warehouseId",
+		    "#name": "name",
 		},
 		ExpressionAttributeValues: {
 		    ":warehouseId": req.user.warehouseId,
+		    ":name": "Administrator",
 		},
 	};
 
@@ -700,12 +733,14 @@ function loadDeleteColleaguePage(req, res) {
 		    //TODO - error scenario
 		} else {
 		    //groups OK, now get contacts
-			let filterExpression = '#warehouseId = :warehouseId';
+			let filterExpression = '#warehouseId = :warehouseId AND #address <> :address';
 			let expressionAttributeNames = {
 	            "#warehouseId": "warehouseId",
+	            "#address": "address",
 	        };
 	        let expressionAttributeValues = {
 	        	":warehouseId": req.user.warehouseId,
+	        	":address": req.user.address,
 	        };
 
 			if (objValid(req.query.group)) {
@@ -725,9 +760,7 @@ function loadDeleteColleaguePage(req, res) {
 		    scanContacts(contactParams, emptyContactsArray, function(error, contacts) {
             	//contacts OK, now show screen
     			res.render("delete-colleague", {
-            		address: req.user.address,
-            		role: req.user.role,
-                	warehouseId: req.user.warehouseId,
+            		user: req.user,
                 	groups: groups,
                 	colleagues: contacts,
                 	filteredGroup: req.query.group,
@@ -740,12 +773,16 @@ function loadDeleteColleaguePage(req, res) {
 function loadDeleteGroupPage(req, res) {
 	let groupParams = {
 		TableName: process.env.GROUP_TABLE_NAME,
-		FilterExpression: '#warehouseId = :warehouseId',
+		FilterExpression: '#warehouseId = :warehouseId AND #nameOne <> :nameOne AND #nameTwo <> :nameTwo',
 		ExpressionAttributeNames: {
 		    "#warehouseId": "warehouseId",
+		    "#nameOne": "name",
+		    "#nameTwo": "name",
 		},
 		ExpressionAttributeValues: {
 		    ":warehouseId": req.user.warehouseId,
+		    ":nameOne": 'Administrator',
+		    ":nameTwo": 'Inactive',
 		},
 	};
 
@@ -758,9 +795,7 @@ function loadDeleteGroupPage(req, res) {
 		} else {
 		    //groups OK, now show screen
 			res.render("delete-group", {
-        		address: req.user.address,
-        		role: req.user.role,
-            	warehouseId: req.user.warehouseId,
+        		user: req.user,
             	groups: groups,
         	});
 		}
@@ -770,12 +805,16 @@ function loadDeleteGroupPage(req, res) {
 function loadEditGroupPage(req, res) {
 	let groupParams = {
 		TableName: process.env.GROUP_TABLE_NAME,
-		FilterExpression: '#warehouseId = :warehouseId',
+		FilterExpression: '#warehouseId = :warehouseId AND #nameOne <> :nameOne AND #nameTwo <> :nameTwo',
 		ExpressionAttributeNames: {
 		    "#warehouseId": "warehouseId",
+		    "#nameOne": "name",
+		    "#nameTwo": "name",
 		},
 		ExpressionAttributeValues: {
 		    ":warehouseId": req.user.warehouseId,
+		    ":nameOne": 'Administrator',
+		    ":nameTwo": 'Inactive',
 		},
 	};
 
@@ -788,9 +827,7 @@ function loadEditGroupPage(req, res) {
 		} else {
 		    //groups OK, now show screen
 			res.render("edit-group", {
-        		address: req.user.address,
-        		role: req.user.role,
-            	warehouseId: req.user.warehouseId,
+        		user: req.user,
             	groups: groups,
             	editableGroup: req.query.editableGroup,
         	});
@@ -801,12 +838,14 @@ function loadEditGroupPage(req, res) {
 function loadEditColleaguePage(req, res) {
 	let groupParams = {
 		TableName: process.env.GROUP_TABLE_NAME,
-		FilterExpression: '#warehouseId = :warehouseId',
+		FilterExpression: '#warehouseId = :warehouseId AND #name <> :name',
 		ExpressionAttributeNames: {
 		    "#warehouseId": "warehouseId",
+		    "#name": "name",
 		},
 		ExpressionAttributeValues: {
 		    ":warehouseId": req.user.warehouseId,
+		    ":name": 'Administrator',
 		},
 	};
 
@@ -843,9 +882,7 @@ function loadEditColleaguePage(req, res) {
 		    scanContacts(contactParams, emptyContactsArray, function(error, contacts) {
             	//contacts OK, now show screen
     			res.render("edit-colleague", {
-            		address: req.user.address,
-            		role: req.user.role,
-                	warehouseId: req.user.warehouseId,
+            		user: req.user,
                 	groups: groups,
                 	colleagues: contacts,
                 	filteredGroup: req.query.group,
@@ -857,32 +894,74 @@ function loadEditColleaguePage(req, res) {
 }
 
 function loadGroupMessageInfoPage(req, res) {
-	let params = {
-		TableName: process.env.MESSAGE_RECEIPT_TABLE_NAME,
-		FilterExpression: '#warehouseId = :warehouseId AND #groupMessageId = :groupMessageId',
+	//params to get all contacts in group that aren't the current user
+	let contactParams = {
+	    TableName: process.env.CONTACT_TABLE_NAME,
+	    FilterExpression: '#warehouseId = :warehouseId',
+	    ExpressionAttributeNames: {
+	        "#warehouseId": "warehouseId",
+	    },
+	    ExpressionAttributeValues: {
+	        ":warehouseId": req.user.warehouseId,
+	    },
+	};
+
+	let emptyContactsArray = [];
+	scanContacts(contactParams, emptyContactsArray, function(error, contacts) {
+		let params = {
+			TableName: process.env.MESSAGE_RECEIPT_TABLE_NAME,
+			FilterExpression: '#warehouseId = :warehouseId AND #groupMessageId = :groupMessageId',
+			ExpressionAttributeNames: {
+			    "#warehouseId": "warehouseId",
+			    "#groupMessageId": "groupMessageId",
+			},
+			ExpressionAttributeValues: {
+			    ":warehouseId": req.user.warehouseId,
+			    ":groupMessageId": req.query.groupMessageId,
+			},
+		};
+
+		let emptyMessageReceiptsArray = [];
+		scanMessageReceipts(params, emptyMessageReceiptsArray, function(error, messageReceipts) {
+			res.render("group-message-info", {
+            	messageReceipts: messageReceipts,
+            	contacts: contacts,
+        	});
+		});
+	});
+}
+
+function loadAddColleaguePage(req, res, status, statusColour) {
+	let groupParams = {
+		TableName: process.env.GROUP_TABLE_NAME,
+		FilterExpression: '#warehouseId = :warehouseId AND #name <> :name',
 		ExpressionAttributeNames: {
 		    "#warehouseId": "warehouseId",
-		    "#groupMessageId": "groupMessageId",
+		    "#name": "name",
 		},
 		ExpressionAttributeValues: {
 		    ":warehouseId": req.user.warehouseId,
-		    ":groupMessageId": req.query.groupMessageId,
+		    ":name": 'Administrator',
 		},
 	};
 
-	let emptyMessageReceiptsArray = [];
-	scanMessageReceipts(params, emptyMessageReceiptsArray, function(error, messageReceipts) {
-		if (error !== null) {
-		    //TODO - error scenario
-		} else if (messageReceipts === null || messageReceipts.length < 1) {
-		    //TODO - error scenario
-		} else {
-		    //message receipts OK, now show screen
-			res.render("group-message-info", {
-            	messageReceipts: messageReceipts,
-        	});
-		}
+	let emptyGroupsArray = [];
+	scanGroups(groupParams, emptyGroupsArray, function(error, groups) {
+		res.render("add-colleague", {
+        	user: req.user,
+        	statusColour: statusColour,
+        	status: status,
+        	groups: groups,
+        });
 	});
+}
+
+function loadAddGroupPage(req, res, status, statusColour) {
+	res.render("add-group", {
+    	user: req.user,
+    	statusColour: statusColour,
+    	status: status,
+    });
 }
 
 //GET routes
@@ -917,9 +996,7 @@ app.get("/add-group.html", function(req, res) {
 	if (req.isAuthenticated()) {
 		if (req.user.role === 'Admin') {
 			res.render("add-group", {
-	        	address: req.user.address,
-	        	role: req.user.role,
-	        	warehouseId: req.user.warehouseId,
+	        	user: req.user,
 	        	statusColour: "",
 	        	status: "",
 	        });
@@ -935,28 +1012,7 @@ app.get("/add-colleague.html", function(req, res) {
 	//is user logged in?
 	if (req.isAuthenticated()) {
 		if (req.user.role === 'Admin') {
-			let groupParams = {
-				TableName: process.env.GROUP_TABLE_NAME,
-				FilterExpression: '#warehouseId = :warehouseId',
-				ExpressionAttributeNames: {
-				    "#warehouseId": "warehouseId",
-				},
-				ExpressionAttributeValues: {
-				    ":warehouseId": req.user.warehouseId,
-				},
-			};
-
-			let emptyGroupsArray = [];
-			scanGroups(groupParams, emptyGroupsArray, function(error, groups) {
-				res.render("add-colleague", {
-		        	address: req.user.address,
-		        	role: req.user.role,
-		        	warehouseId: req.user.warehouseId,
-		        	statusColour: "",
-		        	status: "",
-		        	groups: groups,
-		        });
-			});
+			loadAddColleaguePage(req, res, "", "");
 		} else {
 			res.sendFile(__dirname + "/restricted-access.html");
 		}
@@ -1067,6 +1123,8 @@ app.post("/view.html", function(req, res) {
 				isGroupMessage: isGroup,
 				groupMessageId: uuid.v4(),
 				isIndividualMessage: !isGroup,
+				firstName: req.user.firstName,
+				lastName: req.user.lastName,
 			};
 
 			insertMessage(item, function(error) {
@@ -1099,6 +1157,8 @@ app.post("/view.html", function(req, res) {
 				            	from: req.user.address,
 				            	groupName: to,
 				            	groupMessageId: item.groupMessageId,
+				            	firstName: req.user.firstName,
+				            	lastName: req.user.lastName,
 				            };
 
 				            //send message to individual contacts within the group
@@ -1124,7 +1184,7 @@ app.post("/add-group.html", function(req, res) {
 			const groupName = req.body.groupName;
 				
 			if (!objValid(groupName)) {
-				//TODO - notify user?
+				loadAddGroupPage(req, res, "Please enter a value", "red");
 				return;
 			}
 
@@ -1142,13 +1202,7 @@ app.post("/add-group.html", function(req, res) {
 					status = "Unable to add group";
 				}
 
-				res.render("add-group", {
-		        	address: req.user.address,
-		        	role: req.user.role,
-		        	warehouseId: req.user.warehouseId,
-		        	statusColour: statusColour,
-		        	status: status,
-		        });
+				loadAddGroupPage(req, res, status, statusColour);
 			});
 		} else {
 			res.sendFile(__dirname + "/restricted-access.html");
@@ -1163,12 +1217,24 @@ app.post("/add-colleague.html", function(req, res) {
 	if (req.isAuthenticated()) {
 		if (req.user.role === 'Admin') {
 			const colleagueAddress = req.body.colleagueAddress;
-			const colleagueGroup = req.body.colleagueGroup;
+			let colleagueGroup = req.body.colleagueGroup;
 			const colleaguePassword = req.body.colleaguePassword;
 			const colleagueRole = req.body.colleagueRole;
+			const colleagueFirstName = req.body.colleagueFirstName;
+			const colleagueLastName = req.body.colleagueLastName;
+			const firstColleaguePassword = req.body.firstColleaguePassword;
 			
-			if (!objValid(colleagueAddress) || !objValid(colleagueGroup) || !objValid(colleaguePassword) || !objValid(colleagueRole)) {
-				//TODO - notify user?
+			if (!objValid(colleagueGroup) && colleagueRole === 'Admin') {
+				colleagueGroup = 'Administrator';
+			}
+
+			if (!objValid(colleagueAddress) || !objValid(colleagueGroup) || !objValid(colleaguePassword) || !objValid(colleagueRole) || !objValid(colleagueFirstName) || !objValid(colleagueLastName) || !objValid(firstColleaguePassword)) {
+				loadAddColleaguePage(req, res, "Please fill out all fields", "red");
+				return;
+			}
+
+			if (colleaguePassword !== firstColleaguePassword) {
+				loadAddColleaguePage(req, res, "Passwords do not match", "red");
 				return;
 			}
 
@@ -1178,6 +1244,8 @@ app.post("/add-colleague.html", function(req, res) {
 				group: colleagueGroup,
 				password: colleaguePassword,
 				role: colleagueRole,
+				firstName: colleagueFirstName,
+				lastName: colleagueLastName,
 			};
 
 			insertColleague(colleague, function(error) {
@@ -1189,29 +1257,7 @@ app.post("/add-colleague.html", function(req, res) {
 					status = "Unable to add colleague";
 				}
 
-				let groupParams = {
-					TableName: process.env.GROUP_TABLE_NAME,
-					FilterExpression: '#warehouseId = :warehouseId',
-					ExpressionAttributeNames: {
-					    "#warehouseId": "warehouseId",
-					},
-					ExpressionAttributeValues: {
-					    ":warehouseId": req.user.warehouseId,
-					},
-				};
-
-				let emptyGroupsArray = [];
-
-				scanGroups(groupParams, emptyGroupsArray, function(error, groups) {
-					res.render("add-colleague", {
-			        	address: req.user.address,
-			        	role: req.user.role,
-			        	warehouseId: req.user.warehouseId,
-			        	statusColour: statusColour,
-			        	status: status,
-			        	groups: groups,
-			        });
-				});
+				loadAddColleaguePage(req, res, status, statusColour);
 			});
 		} else {
 			res.sendFile(__dirname + "/restricted-access.html");
@@ -1280,8 +1326,8 @@ app.post("/delete-group.html", function(req, res) {
 
 				let emptyContactsArray = [];
 				scanContacts(contactParams, emptyContactsArray, function(error, contacts) {
-					//pass contacts array to the loop update method to move orphans to 'Other' group
-					setColleagueGroup(contacts, 'Other', function() {
+					//pass contacts array to the loop update method to move orphans to 'Inactive' group
+					setColleagueGroup(contacts, 'Inactive', function() {
 						loadDeleteGroupPage(req, res);
 					});
 				});
@@ -1360,12 +1406,20 @@ app.post("/edit-colleague.html", function(req, res) {
 	if (req.isAuthenticated()) {
 		if (req.user.role === 'Admin') {
 			const previousColleagueAddress = req.body.previousColleagueAddress;
-			const newColleagueGroup = req.body.newColleagueGroup;
+			let newColleagueGroup = req.body.newColleagueGroup;
 			const newColleagueRole = req.body.newColleagueRole;
 			
+			console.log(previousColleagueAddress);
+			console.log(newColleagueGroup);
+			console.log(newColleagueRole);
+
 			if (!objValid(previousColleagueAddress)) {
 				//TODO - notify user?
 				return;
+			}
+
+			if (!objValid(newColleagueGroup) && newColleagueRole === 'Admin') {
+				newColleagueGroup = 'Administrator';
 			}
 
 			if (!objValid(newColleagueGroup)) {
