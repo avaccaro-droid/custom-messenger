@@ -482,6 +482,47 @@ function insertColleague(item, callback) {
 	});
 }
 
+function insertMessageArchives(messages, callback) {
+	let x = messages.length;
+	if (x === 0) {
+		return callback();
+	} else {
+		//take 1 away from x because length is always 1 more than index
+		--x;
+
+		const message = messages[x];
+
+		//create params
+		const params = {
+		    TableName: process.env.MESSAGE_ARCHIVE_TABLE_NAME,
+		    Item: {
+		        id: message.id,
+		        timestamp: message.timestamp,
+		        message: message.message,
+		        from: message.from,
+		        isGroupMessage: message.isGroupMessage,
+		        groupMessageId: message.groupMessageId,
+		        isIndividualMessage: message.isIndividualMessage,
+		        firstName: message.firstName,
+		        lastName: message.lastName,
+		    },
+		};
+
+		dynamoDb.put(params, (error) => {
+		    //handle potential errors
+		    if (error) {
+		        console.error(error);
+		    }
+
+		    //regardless of status, delete element from current array
+		    messages.splice(x, 1);
+
+		    //run this method again (recursive)
+		    insertMessageArchives(messages, callback);
+		});
+	}
+}
+
 //db delete methods
 function deleteContact(item, callback) {
 	const params = {
@@ -521,6 +562,40 @@ function deleteGroup(item, callback) {
 
 	    return callback(error);
 	});
+}
+
+function deleteMessages(messages, callback) {
+	let x = messages.length;
+	if (x === 0) {
+		return callback();
+	} else {
+		//take 1 away from x because length is always 1 more than index
+		--x;
+
+		const message = messages[x];
+
+		//create params
+		const params = {
+		    TableName: process.env.MESSAGE_TABLE_NAME,
+		    Key: {
+		        id: message.id,
+		        timestamp: message.timestamp,
+		    },
+		};
+
+		dynamoDb.delete(params, (error, result) => {
+		    //handle potential errors
+		    if (error) {
+		        console.error(error);
+		    }
+
+		    //regardless of status, delete element from current array
+		    messages.splice(x, 1);
+		    
+		    //run this method again (recursive)
+		    deleteMessages(messages, callback);
+		});
+	}
 }
 
 //db update methods
@@ -1456,6 +1531,59 @@ app.post("/edit-colleague.html", function(req, res) {
 		    	}
 
 	            loadEditColleaguePage(req, res);
+	        });
+		} else {
+			res.sendFile(__dirname + "/restricted-access.html");
+		}
+	} else {
+		res.sendFile(__dirname + "/login.html");
+	}
+});
+
+app.post("/view.html/archive", function(req, res) {
+	//is user logged in?
+	if (req.isAuthenticated()) {
+		if (req.user.role === 'Admin') {
+			const to = req.query.selected;
+
+			//default view all params
+	    	let filterExpression = 'begins_with(#id, :warehouseId)';
+	    	let expressionAttributeNames = {
+	    	    "#id": "id",
+	    	};
+	    	let expressionAttributeValues = {
+	    	    ":warehouseId": req.user.warehouseId,
+	    	};
+
+	    	//do we have a query string param?
+	    	if (objValid(to)) {
+	    		filterExpression += ' AND #id = :id OR #id2 = :id2 AND #from = :from';
+				expressionAttributeNames['#id'] = "id";
+				expressionAttributeNames['#id2'] = "id";
+				expressionAttributeNames['#from'] = "from";
+				expressionAttributeValues[':id'] = req.user.warehouseId + "£" + to;
+				expressionAttributeValues[':id2'] = req.user.warehouseId + "£" + req.user.address;
+				expressionAttributeValues[':from'] = to;
+	    	}
+
+	        let messageParams = {
+	        	TableName: process.env.MESSAGE_TABLE_NAME,
+	        	FilterExpression: filterExpression,
+	        	ExpressionAttributeNames: expressionAttributeNames,
+	        	ExpressionAttributeValues: expressionAttributeValues,
+	        };
+
+	        let emptyMessagesArray = [];
+	        scanMessages(messageParams, emptyMessagesArray, function(error, messages) {
+	        	let messagesToDelete = JSON.parse(JSON.stringify(messages));
+
+	        	//insert messages to archive table
+	        	insertMessageArchives(messages, function() {
+	        		//delete messages from message table
+	        		deleteMessages(messagesToDelete, function() {
+	        			res.redirect('/view.html?selected=' + to);
+	        		});
+	        	});
 	        });
 		} else {
 			res.sendFile(__dirname + "/restricted-access.html");

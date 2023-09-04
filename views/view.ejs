@@ -129,6 +129,14 @@
 
 		<table style="margin-left: auto; margin-right: auto;">
 			<tr>
+				<% if (user.role === 'Admin') { %>
+				<td>
+					<form action="/view.html/archive?selected=<%= selectedGroupContact.partialId %>" method="POST">
+						<!-- https://drive.google.com/uc?export=view&id= + Google Drive link's ID (characters between /d/ and /view) -->
+						<input type="image" src="https://drive.google.com/uc?export=view&id=1ez5Lo7ddpZy4DvxpnKV3mlWGZu6NgwOD" alt="Archive" width="30" height="30" />
+					</form>
+				</td>
+				<% } %>
 				<td>
 					<!-- https://drive.google.com/uc?export=view&id= + Google Drive link's ID (characters between /d/ and /view) -->
 					<input type="image" src="https://drive.google.com/uc?export=view&id=1QSkEtLHGJvmucZFJnlaynBUGxI8HmurQ" alt="Refresh" width="30" height="30" onclick="reload();" />
@@ -229,7 +237,7 @@
 
 		<footer>
 			<hr class="solid">
-			<h6>Copyright © 2023<br>7.0.0<br>Powered by software developed by Mobilis Consulting Ltd.</h6>
+			<h6>Copyright © 2023<br>8.0.0<br>Powered by software developed by Mobilis Consulting Ltd.</h6>
 		</footer>
 	</body>
 </html>
