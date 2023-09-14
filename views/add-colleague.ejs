@@ -55,7 +55,11 @@
 		  				<td>
 		  					<select name="colleagueGroup" id="groupSelect">
 		  						<% groups.forEach(function(group) { %>
+		  						<% if (group.name === 'Inactive') { %>
+		    					<option value="<%= group.name %>" selected><%= group.name %></option>
+		    					<% } else { %>
 		    					<option value="<%= group.name %>"><%= group.name %></option>
+		    					<% } %>
 		    					<% }) %>
 		  					</select>
 		  				</td>
@@ -86,7 +90,7 @@
 
 		<footer>
 			<hr class="solid">
-			<h6>Copyright © 2023<br>8.0.0<br>Powered by software developed by Mobilis Consulting Ltd.</h6>
+			<h6>Copyright © 2023<br>9.0.0<br>Powered by software developed by Mobilis Consulting Ltd.</h6>
 		</footer>
 
 		<script>
@@ -107,6 +111,8 @@
 					groupSelect.disabled = true;
 				} else {
 					groupSelect.removeChild(groupSelect[groupSelect.selectedIndex]);
+					//set the selected value
+					groupSelect.value = "Inactive";
 					//enable the user to make changes
 					groupSelect.disabled = false;
 				}
