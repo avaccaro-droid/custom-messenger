@@ -239,6 +239,58 @@ function scanMessageReceipts(params, messageReceipts, callback) {
     });
 }
 
+function scanLicences(params, licences, callback) {
+    dynamoDb.scan(params, (error, result) => {
+        if (error) {
+            console.error(error);
+
+            return callback(error, null);
+        } else if (lastEvaluatedKeyValid(result.LastEvaluatedKey)) {
+            //if LastEvaluatedKey is present & valid, we need to paginate
+            //assign objects
+            licences.push(...result.Items);
+
+            //modify params
+            params["ExclusiveStartKey"] = result.LastEvaluatedKey;
+
+            //recursive call
+            scanLicences(params, licences, callback);
+        } else {
+            //assign objects to class variable
+            licences.push(...result.Items);
+
+            //no more pagination required
+            return callback(null, licences);
+        }
+    });
+}
+
+function scanDevices(params, devices, callback) {
+    dynamoDb.scan(params, (error, result) => {
+        if (error) {
+            console.error(error);
+
+            return callback(error, null);
+        } else if (lastEvaluatedKeyValid(result.LastEvaluatedKey)) {
+            //if LastEvaluatedKey is present & valid, we need to paginate
+            //assign objects
+            devices.push(...result.Items);
+
+            //modify params
+            params["ExclusiveStartKey"] = result.LastEvaluatedKey;
+
+            //recursive call
+            scanDevices(params, devices, callback);
+        } else {
+            //assign objects to class variable
+            devices.push(...result.Items);
+
+            //no more pagination required
+            return callback(null, devices);
+        }
+    });
+}
+
 //sorting/filtering methods
 function sortGroupsAndContacts(groups, contacts, currentUser) {
 	const map = new Map();
@@ -444,6 +496,7 @@ function insertGroup(item, callback) {
 	    Item: {
 	        warehouseId: item.warehouseId,
 	        name: item.name,
+	        deferredMessage: item.deferredMessage,
 	    },
 	};
 
@@ -598,6 +651,25 @@ function deleteMessages(messages, callback) {
 	}
 }
 
+function deleteDevice(deviceId, callback) {
+	const params = {
+	    TableName: process.env.DEVICE_TABLE_NAME,
+	    Key: {
+	        deviceId: deviceId,
+	    },
+	};
+
+	//delete item
+	dynamoDb.delete(params, (error, result) => {
+	    //handle potential errors
+	    if (error) {
+	        console.error(error);
+	    }
+
+	    return callback(error);
+	});
+}
+
 //db update methods
 function setColleagueGroup(colleagues, newGroup, callback) {
 	let x = colleagues.length;
@@ -678,6 +750,32 @@ function setMessageReceipt(messageReceipts, callback) {
             setMessageReceipt(messageReceipts, callback);
         });
 	}
+}
+
+function setGroupDeferredMessage(warehouseId, name, deferredMessage, callback) {
+	const updateParams = {
+        TableName: process.env.GROUP_TABLE_NAME,
+        Key: {
+            warehouseId: warehouseId,
+            name: name,
+        },
+        UpdateExpression: 'SET #deferredMessage = :deferredMessage',
+        ExpressionAttributeNames: {
+            "#deferredMessage": "deferredMessage",
+        },
+        ExpressionAttributeValues: {
+            ":deferredMessage": deferredMessage,
+        },
+    };
+
+    dynamoDb.update(updateParams, (error) => {
+        //handle potential errors
+        if (error) {
+            console.error(error);
+        }
+
+        return callback();
+    });
 }
 
 //webpage loading methods
@@ -880,16 +978,14 @@ function loadDeleteGroupPage(req, res) {
 function loadEditGroupPage(req, res) {
 	let groupParams = {
 		TableName: process.env.GROUP_TABLE_NAME,
-		FilterExpression: '#warehouseId = :warehouseId AND #nameOne <> :nameOne AND #nameTwo <> :nameTwo',
+		FilterExpression: '#warehouseId = :warehouseId AND #nameOne <> :nameOne',
 		ExpressionAttributeNames: {
 		    "#warehouseId": "warehouseId",
 		    "#nameOne": "name",
-		    "#nameTwo": "name",
 		},
 		ExpressionAttributeValues: {
 		    ":warehouseId": req.user.warehouseId,
 		    ":nameOne": 'Administrator',
-		    ":nameTwo": 'Inactive',
 		},
 	};
 
@@ -1039,6 +1135,89 @@ function loadAddGroupPage(req, res, status, statusColour) {
     });
 }
 
+function loadViewLicencesPage(req, res) {
+	let licenceParams = {
+		TableName: process.env.LICENCE_TABLE_NAME,
+		FilterExpression: '#warehouseId = :warehouseId',
+		ExpressionAttributeNames: {
+		    "#warehouseId": "warehouseId",
+		},
+		ExpressionAttributeValues: {
+		    ":warehouseId": req.user.warehouseId,
+		},
+	};
+
+	let emptyLicencesArray = [];
+	scanLicences(licenceParams, emptyLicencesArray, function(error, licences) {
+		if (error !== null) {
+		    //TODO - error scenario
+		} else {
+        	//contacts OK, now show screen
+			res.render("view-licences", {
+        		user: req.user,
+	        	licences: licences,
+        	});
+		}
+	});
+}
+
+function loadViewDevicesPage(req, res) {
+	let licenceParams = {
+		TableName: process.env.LICENCE_TABLE_NAME,
+		FilterExpression: '#warehouseId = :warehouseId',
+		ExpressionAttributeNames: {
+		    "#warehouseId": "warehouseId",
+		},
+		ExpressionAttributeValues: {
+		    ":warehouseId": req.user.warehouseId,
+		},
+	};
+
+	let emptyLicencesArray = [];
+	scanLicences(licenceParams, emptyLicencesArray, function(error, licences) {
+		if (error !== null) {
+		    //TODO - error scenario
+		} else {
+		    //licences OK, now get devices
+			let filterExpression = '#warehouseId = :warehouseId';
+			let expressionAttributeNames = {
+	            "#warehouseId": "warehouseId",
+	        };
+	        let expressionAttributeValues = {
+	        	":warehouseId": req.user.warehouseId,
+	        };
+
+			if (objValid(req.query.licence)) {
+				filterExpression += ' AND #licenceId = :licenceId';
+				expressionAttributeNames['#licenceId'] = "licenceId";
+				expressionAttributeValues[':licenceId'] = req.query.licence;
+			}
+
+			let deviceParams = {
+				TableName: process.env.DEVICE_TABLE_NAME,
+				FilterExpression: filterExpression,
+				ExpressionAttributeNames: expressionAttributeNames,
+				ExpressionAttributeValues: expressionAttributeValues,
+			};
+
+			let emptyDevicesArray = [];
+			scanDevices(deviceParams, emptyDevicesArray, function(error, devices) {
+				if (error !== null) {
+				    //TODO - error scenario
+				} else {
+		        	//contacts OK, now show screen
+					res.render("view-devices", {
+		        		user: req.user,
+			        	devices: devices,
+			        	licences: licences,
+			        	filteredLicence: req.query.licence,
+		        	});
+				}
+			});
+		}
+	});
+}
+
 //GET routes
 app.get("/", function(req, res) {
 	res.sendFile(__dirname + "/index.html");
@@ -1157,6 +1336,32 @@ app.get("/view.html/groupMessageInfo", function(req, res) {
 	}
 });
 
+app.get("/view-licences.html", function(req, res) {
+	//is user logged in?
+	if (req.isAuthenticated()) {
+		if (req.user.role === 'Admin') {
+			loadViewLicencesPage(req, res);
+		} else {
+			res.sendFile(__dirname + "/restricted-access.html");
+		}
+	} else {
+		res.sendFile(__dirname + "/login.html");
+	}
+});
+
+app.get("/view-devices.html", function(req, res) {
+	//is user logged in?
+	if (req.isAuthenticated()) {
+		if (req.user.role === 'Admin') {
+			loadViewDevicesPage(req, res);
+		} else {
+			res.sendFile(__dirname + "/restricted-access.html");
+		}
+	} else {
+		res.sendFile(__dirname + "/login.html");
+	}
+});
+
 //POST routes
 app.post("/login.html", function(req, res) {
 	passport.authenticate("local")(req, res, function() {
@@ -1257,6 +1462,7 @@ app.post("/add-group.html", function(req, res) {
 	if (req.isAuthenticated()) {
 		if (req.user.role === 'Admin') {
 			const groupName = req.body.groupName;
+			const groupDeferredMessage = req.body.groupDeferredMessage;
 				
 			if (!objValid(groupName)) {
 				loadAddGroupPage(req, res, "Please enter a value", "red");
@@ -1266,6 +1472,7 @@ app.post("/add-group.html", function(req, res) {
 			const group = {
 				warehouseId: req.user.warehouseId,
 				name: groupName,
+				deferredMessage: objValid(groupDeferredMessage) ? groupDeferredMessage : "",
 			};
 
 			insertGroup(group, function(error) {
@@ -1420,53 +1627,20 @@ app.post("/edit-group.html", function(req, res) {
 	if (req.isAuthenticated()) {
 		if (req.user.role === 'Admin') {
 			const previousGroupName = req.body.previousGroupName;
-			const newGroupName = req.body.newGroupName;
+			const newDeferredMessage = req.body.newDeferredMessage;
 			
 			if (!objValid(previousGroupName)) {
 				//TODO - notify user?
 				return;
 			}
 
-			if (!objValid(newGroupName)) {
+			if (!objValid(newDeferredMessage)) {
 				//TODO - notify user?
 				return;
 			}
 
-			//because the name is a composite key, the record has to be deleted & inserted
-			const previousGroup = {
-				warehouseId: req.user.warehouseId,
-				name: previousGroupName,
-			};
-
-			deleteGroup(previousGroup, function(error) {
-				//now insert new group
-				const newGroup = {
-					warehouseId: req.user.warehouseId,
-					name: newGroupName,
-				};
-
-				insertGroup(newGroup, function(error) {
-					//get all colleagues that were in the deleted group
-					//params to get all contacts in group
-					let contactParams = {
-					    TableName: process.env.CONTACT_TABLE_NAME,
-					    FilterExpression: '#group = :group',
-					    ExpressionAttributeNames: {
-					        "#group": "group",
-					    },
-					    ExpressionAttributeValues: {
-					        ":group": previousGroupName,
-					    },
-					};
-
-					let emptyContactsArray = [];
-					scanContacts(contactParams, emptyContactsArray, function(error, contacts) {
-						//pass contacts array to the loop update method to move orphans to new group
-						setColleagueGroup(contacts, newGroupName, function() {
-							loadEditGroupPage(req, res);
-						});
-					});
-				});
+			setGroupDeferredMessage(req.user.warehouseId, previousGroupName, newDeferredMessage, function() {
+				loadEditGroupPage(req, res);
 			});
 		} else {
 			res.sendFile(__dirname + "/restricted-access.html");
@@ -1585,6 +1759,28 @@ app.post("/view.html/archive", function(req, res) {
 	        		});
 	        	});
 	        });
+		} else {
+			res.sendFile(__dirname + "/restricted-access.html");
+		}
+	} else {
+		res.sendFile(__dirname + "/login.html");
+	}
+});
+
+app.post("/view-devices.html", function(req, res) {
+	//is user logged in?
+	if (req.isAuthenticated()) {
+		if (req.user.role === 'Admin') {
+			const deviceId = req.body.deviceId;
+			
+			if (!objValid(deviceId)) {
+				//TODO - notify user?
+				return;
+			}
+
+			deleteDevice(deviceId, function(error) {
+				loadViewDevicesPage(req, res);
+			});
 		} else {
 			res.sendFile(__dirname + "/restricted-access.html");
 		}

@@ -32,6 +32,13 @@
 		  		      	<a href="delete-colleague.html">Delete colleague</a>
 		  		    </div>
 		  	  	</li>
+		  	  	<li class="dropdown">
+			    	<a href="javascript:void(0)" class="dropbtn">Licences</a>
+				    <div class="dropdown-content">
+			      		<a href="view-licences.html">View licences</a>
+				      	<a href="view-devices.html">View devices</a>
+				    </div>
+			  	</li>
 		  	  	<li><a href="logout.html">Logout</a></li>
 		  	  	<li>
 		  	  		<p>Name: <b><%= user.firstName %> <%= user.lastName %></b></p><br>
@@ -44,15 +51,18 @@
 		<table id="groupTable" style="width: 100%; margin-top: 20px">
 		  	<tr>
 		    	<th style="text-align:left">Name</th>
+		    	<th style="text-align:left">Deferred message</th>
 		  	</tr>
 		  	<% groups.forEach(function(group) { %>
 		  	<tr class="lunaRows">
 		  		<form action="/edit-group.html" method="POST">
 		  			<% if (editableGroup !== null && typeof editableGroup !== 'undefined' && editableGroup === group.name) { %>
-		  			<td><input type="text" name="newGroupName" value="<%= group.name %>"></td>
+		  			<td><%= group.name %></td>
+		  			<td><input type="text" name="newDeferredMessage" value="<%= group.deferredMessage %>" style="width: 100%;"></td>
 		  			<td><button type="submit">Save</button></td>
 		  			<% } else { %>
 		  			<td><%= group.name %></td>
+		  			<td><%= group.deferredMessage %></td>
 		  			<td><button type="button" onclick="makeEditable('<%= group.name %>');">Edit</button></td>
 		  			<% } %>
 			  		<td>
@@ -65,7 +75,7 @@
 
 		<footer>
 			<hr class="solid">
-			<h6>Copyright © 2023<br>9.0.0<br>Powered by software developed by Mobilis Consulting Ltd.</h6>
+			<h6>Copyright © 2023<br>10.0.0<br>Powered by software developed by Mobilis Consulting Ltd.</h6>
 		</footer>
 	</body>
 </html>

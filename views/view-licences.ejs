@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Groups - add group</title>
+		<title>Licences - view licences</title>
 		<link rel="stylesheet" type="text/css" href="/css/styles.css" />
 	</head>
 	<body>
@@ -10,10 +10,10 @@
 				<li><a href="index.html">Home</a></li>
 				<li><a href="view.html">Messenger</a></li>
 				<li class="dropdown">
-			    	<a href="javascript:void(0)" class="dropbtnSelected">Groups</a>
+			    	<a href="javascript:void(0)" class="dropbtn">Groups</a>
 				    <div class="dropdown-content">
-			      		<a href="add-group.html" class="selectedNav">Add group</a>
-				      	<a href="edit-group.html">Edit group</a>
+			      		<a href="add-group.html">Add group</a>
+				      	<a href="edit-group.html" class="selectedNav">Edit group</a>
 				      	<a href="delete-group.html">Delete group</a>
 				    </div>
 			  	</li>
@@ -26,9 +26,9 @@
 		  		    </div>
 		  	  	</li>
 		  	  	<li class="dropdown">
-			    	<a href="javascript:void(0)" class="dropbtn">Licences</a>
+			    	<a href="javascript:void(0)" class="dropbtnSelected">Licences</a>
 				    <div class="dropdown-content">
-			      		<a href="view-licences.html">View licences</a>
+			      		<a href="view-licences.html" class="selectedNav">View licences</a>
 				      	<a href="view-devices.html">View devices</a>
 				    </div>
 			  	</li>
@@ -41,26 +41,24 @@
 			</ul>
 		</nav>
 
-		<div class="paragraph" style="text-align:left;">
-			<h5 style="color: <%= statusColour %>"><%= status %></h5>
-			<form action="/add-group.html" method="POST">
-				<table style="width:25%">
-					<tr>
-		  				<td>Name</td>
-		  				<td><input type="text" name="groupName"></input></td>
-		  			</tr>
-		  			<tr>
-		  				<td>Deferred message</td>
-		  				<td>
-		  					<textarea name="groupDeferredMessage" rows="4" cols="18"></textarea>
-		  				</td>
-		  			</tr>
-		  			<tr>
-		  				<td><button type="submit">Add</button></td>
-		  			</tr>
-				</table>
-			</form>
-		</div>
+		<table id="licenceTable" style="width: 100%; margin-top: 20px">
+		  	<tr>
+		    	<th style="text-align:left">Licence ID</th>
+		    	<th style="text-align:left">App ID</th>
+		    	<th style="text-align:left">User limit</th>
+		    	<th style="text-align:left">Expiry date</th>
+		    	<th style="text-align:left">Created on</th>
+		  	</tr>
+		  	<% licences.forEach(function(licence) { %>
+		  	<tr class="lunaRows">
+		  		<td><%= licence.licenceId %></td>
+	  			<td><%= licence.appId %></td>
+	  			<td><%= licence.userLimit %></td>
+	  			<td><%= licence.expiryDate %></td>
+	  			<td><%= licence.createdOn %></td>
+		  	</tr>
+		  	<% }) %>
+		</table>
 
 		<footer>
 			<hr class="solid">

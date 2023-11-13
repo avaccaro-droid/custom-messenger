@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Licences - view devices</title>
+		<link rel="stylesheet" type="text/css" href="/css/styles.css" />
+
+		<script>
+			function filterDevices() {
+				//this is the selected licence
+				const licences = document.getElementById("licenceSelect");
+				location.href = "/view-devices.html?licence=" + licences.options[licences.selectedIndex].value;
+			}
+		</script>
+	</head>
+	<body>
+		<nav>
+			<ul>
+				<li><a href="index.html">Home</a></li>
+				<li><a href="view.html">Messenger</a></li>
+				<li class="dropdown">
+			    	<a href="javascript:void(0)" class="dropbtn">Groups</a>
+				    <div class="dropdown-content">
+			      		<a href="add-group.html">Add group</a>
+				      	<a href="edit-group.html" class="selectedNav">Edit group</a>
+				      	<a href="delete-group.html">Delete group</a>
+				    </div>
+			  	</li>
+		  		<li class="dropdown">
+		  	    	<a href="javascript:void(0)" class="dropbtn">Colleagues</a>
+		  		    <div class="dropdown-content">
+		  	      		<a href="add-colleague.html">Add colleague</a>
+		  		      	<a href="edit-colleague.html">Edit colleague</a>
+		  		      	<a href="delete-colleague.html">Delete colleague</a>
+		  		    </div>
+		  	  	</li>
+		  	  	<li class="dropdown">
+			    	<a href="javascript:void(0)" class="dropbtnSelected">Licences</a>
+				    <div class="dropdown-content">
+			      		<a href="view-licences.html">View licences</a>
+				      	<a href="view-devices.html" class="selectedNav">View devices</a>
+				    </div>
+			  	</li>
+		  	  	<li><a href="logout.html">Logout</a></li>
+		  	  	<li>
+		  	  		<p>Name: <b><%= user.firstName %> <%= user.lastName %></b></p><br>
+		  	  		<p>Role: <b><%= user.role %></b></p><br>
+		  	  		<p>Business unit: <b><%= user.warehouseId %></b></p>
+		  	  	</li>
+			</ul>
+		</nav>
+
+		<table style="width: 25%; margin-top: 20px;">
+			<tr>
+				<td>Licence</td>
+				<td>
+					<select id="licenceSelect" onchange="filterDevices();">
+						<% if (filteredLicence === null || typeof filteredLicence === 'undefined') { %>
+						<option value="" selected></option>
+						<% } else { %>
+						<option value=""></option>
+						<% } %>
+						<% licences.forEach(function(licence) { %>
+						<% if (filteredLicence !== null && typeof filteredLicence !== 'undefined' && licence.licenceId === filteredLicence) { %>
+						<option value="<%= licence.licenceId %>" selected><%= licence.licenceId %></option>
+						<% } else { %>
+						<option value="<%= licence.licenceId %>"><%= licence.licenceId %></option>
+						<% } %>
+						<% }) %>
+					</select>
+				</td>
+			</tr>
+		</table>
+
+		<table id="deviceTable" style="width: 100%; margin-top: 20px">
+		  	<tr>
+		    	<th style="text-align:left">Device ID</th>
+		    	<th style="text-align:left">App ID</th>
+		    	<th style="text-align:left">App version</th>
+		    	<th style="text-align:left">Device type</th>
+		    	<th style="text-align:left">Created on</th>
+		    	<th style="text-align:left">End subscription</th>
+		    	<th style="text-align:left">Last seen</th>
+		  	</tr>
+		  	<% devices.forEach(function(device) { %>
+		  	<tr class="lunaRows">
+		  		<form action="/view-devices.html" method="POST">
+			  		<td><%= device.deviceId %></td>
+		  			<td><%= device.appId %></td>
+		  			<td><%= device.appVersion %></td>
+		  			<td><%= device.deviceType %></td>
+		  			<td><%= device.createdOn %></td>
+		  			<td><%= device.endSubscription %></td>
+		  			<td><%= device.lastSeen %></td>
+		  			<td><button type="submit">Delete</button></td>
+			  		<td>
+			  			<input type="text" name="deviceId" value="<%= device.deviceId %>" style="visibility: hidden; width: 0px; length: 0px;">
+			  		</td>
+		  		</form>
+		  	</tr>
+		  	<% }) %>
+		</table>
+
+		<footer>
+			<hr class="solid">
+			<h6>Copyright © 2023<br>10.0.0<br>Powered by software developed by Mobilis Consulting Ltd.</h6>
+		</footer>
+	</body>
+</html>
