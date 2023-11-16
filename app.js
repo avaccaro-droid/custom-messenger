@@ -130,7 +130,7 @@ function isGroup(name, callback) {
 //utils
 function generateTimestamp() {
     let d = new Date();
-    d.setTime(d.getTime() + (60 * 60 * 1000));
+    // d.setTime(d.getTime() + (60 * 60 * 1000));
     return d.toISOString().replace("T", " ").replace("Z", "");
 }
 
